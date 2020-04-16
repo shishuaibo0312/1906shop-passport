@@ -43,3 +43,9 @@ Route::get('/newpass','FindPass@resPass');  //展示重置密码页面
 Route::post('/newpass','FindPass@doResPass');  //执行重置密码
 
 Route::get('/gitlogin','GithubLogin@gitlogin'); //github登录
+
+//api接口
+Route::prefix('api')->group(function () {
+    Route::post('login','Api\ApiController@login');//登录接口
+    Route::post('logout','Api\ApiController@logout');//退出的接口
+});

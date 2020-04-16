@@ -23,7 +23,7 @@ class UserController extends Controller
     //登陆的执行
 	public function login_do()
 	{
-		$account=request()->except('_token');		
+		$account=request()->account;
     	$pass=request()->pass;	
 		$res=ShopModel::where(['name'=>$account])->orWhere(['mibble'=>$account])->orWhere(['email'=>$account])->first();
     	if($res){
@@ -40,6 +40,8 @@ class UserController extends Controller
                 //使用闭包函数，传递参数
                 Mail::send('user.loginsuccess',$data,function($message) use ($account){ 	
 					$user=ShopModel::where(['name'=>$account])->orWhere(['mibble'=>$account])->orWhere(['email'=>$account])->first();
+					setcookie('user_name',$user['name'],NULL,'/','.1906.com',NULL,true);
+					setcookie('user_id',$user['id'],NULL,'/','.1906.com',NULL,true);
 					$to = [
 						$user['email']
 					];
@@ -47,10 +49,14 @@ class UserController extends Controller
             	});
 
 				$token=Str::random(16);
-				setcookie('token',$token,time() + 3600,'/','.1906.com',NULL,true);
+				setcookie('token',$token,NULL,'/','.1906.com',NULL,true);
+
+
 				$key='str:user:token'.$res['id'];
-				Redis::set($key,$token);
-				Redis::expire($key,3600);
+				$namekey='str:user:name'.$res['name'];
+				Redis::setex($namekey,'3600',$res['name']);
+				Redis::setex($key,'3600',$token);
+				//Redis::expire($key,3600);
 
     			echo "<script>alert('登陆成功');location.href='http://shop.1906.com/';</script>";
                
@@ -155,7 +161,12 @@ class UserController extends Controller
 
 	//退出登录
 	public function loginexit(){
-		$cookie = Cookie::forget('name');
+	    $key='str:user:token'.$_COOKIE['user_id'];
+		$namekey='str:user:name'.$_COOKIE['user_name'];
+		Redis::setex($namekey,3600,NULL);
+		Redis::setex($key,3600,NULL);
+
+
         echo "<script>alert('退出成功');location.href='/login';</script>";
 	}
 
